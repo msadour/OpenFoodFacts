@@ -1,0 +1,50 @@
+Verifier que l'aliment de subsitue correspond bien à la categorie de l'aliment
+*****************************************
+SELECT Product.name, Category.name
+FROM Product, Product_Category, Category
+WHERE Product.id = Product_Category.id_product
+AND Category.id = Product_Category.id_category
+AND Category.name = ""
+AND Product.name IN ('', '');
+
+
+
+SELECT Product.name, Category.name
+FROM Product, Product_Category, Category
+WHERE Product.id = Product_Category.id_product
+AND Category.id = Product_Category.id_category
+AND Category.name = "pizzas tartes salées et quiches"
+
+
+
+Verifier les aliment present dans une categorie par id de categorie
+*****************************************
+SELECT Product.name, Product.nutri_score, Category.name
+FROM Product, Product_Category, Category
+WHERE Product.id = Product_Category.id_product
+AND Category.id = Product_Category.id_category
+AND Category.id = ;
+
+
+Verifier les aliment present dans une categorie par nom de categorie
+*****************************************
+SELECT Product.name, Product.nutri_score, Category.name
+FROM Product, Product_Category, Category
+WHERE Product.id = Product_Category.id_product
+AND Category.id = Product_Category.id_category
+AND Category.name = ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

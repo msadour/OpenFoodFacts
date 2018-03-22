@@ -1,0 +1,40 @@
+CREATE DATABASE IF NOT EXISTS OpenFoodFacts ;
+USE OpenFoodFacts ;
+
+CREATE TABLE IF NOT EXISTS Product (
+    id int NOT NULL AUTO_INCREMENT,
+    name text,
+    nutri_score text,
+    web_link text,
+    place text,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS Category (
+    id int NOT NULL AUTO_INCREMENT,
+    name text NOT NULL,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS User (
+    id int NOT NULL AUTO_INCREMENT,
+    login text NOT NULL,
+    password text NOT NULL,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS Product_Category (
+    id_product int NOT NULL,
+    id_category int NOT NULL,
+    PRIMARY KEY (id_product, id_category),
+    FOREIGN KEY (id_product) REFERENCES Product(id),
+    FOREIGN KEY (id_category) REFERENCES Category(id)
+);
+
+CREATE TABLE IF NOT EXISTS Product_User (
+    id_user int NOT NULL,
+    id_product int NOT NULL,
+    PRIMARY KEY (id_user, id_product),
+    FOREIGN KEY (id_product) REFERENCES Product(id),
+    FOREIGN KEY (id_user) REFERENCES User(id)
+);

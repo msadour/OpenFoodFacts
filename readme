@@ -1,0 +1,10 @@
+Fonctionnalité du programme :
+
+* Selection entre 2 choix :
+    * Choisir un aliment à remplacer
+        * Selectionner une categorie
+        * Rechercher un aliment
+        * Retourner un jeu de resultat
+    * Retrouver des aliments substitué
+
+* Controler la bonne saisie de l'utilisateur
