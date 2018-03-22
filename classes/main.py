@@ -88,12 +88,42 @@ class Main:
         }
         current_score = table_nutri_score[score]
         for key, value in table_nutri_score.items():
-            if value >= current_score :
+            if value > current_score :
                 list_better_score.append(key)
         for letter in list_better_score:
             better_score_str = better_score_str + "'" + letter + "',"
         better_score_str = better_score_str[:-1]
         return better_score_str
+
+    @staticmethod
+    def sort_dict(dict_no_sorted, by_what, sens="asc"):
+        """
+        Cette fonction permet de trié le disctionnaire en parametre (dict_no_sorted).
+        Elle trie les clés ou les valeur via l'argument "by_what". On peut egalement
+        trié par ordre croissant (asc) ou decroissant (desc) via l'argument "sens".
+        """
+
+        dict_sorted = {}
+        if by_what == "key":
+            lst_keys = sorted([int(key) for key, value in dict_no_sorted.items()])
+            if sens == "desc":
+                lst_keys = reversed(lst_keys)
+            for k in lst_keys:
+                value_sorted = dict_no_sorted[str(k)]
+                dict_sorted[k] = value_sorted
+        elif by_what == "value":
+            lst_key_value = [[value, key] for key, value in dict_no_sorted.items()]
+            lst_value = sorted([value for key, value in dict_no_sorted.items()])
+            if sens == "desc":
+                lst_value = reversed(lst_value)
+            for v in lst_value:
+                for kv in lst_key_value:
+                    if v in kv:
+                        dict_sorted[kv[1]] = v
+                        lst_key_value.remove(kv)
+        else:
+            return {"Erreur": "Veuillez saisir en parametre soit clé soit valeur !"}
+        return dict_sorted
 
     @staticmethod
     def get_choice_user():
@@ -105,6 +135,16 @@ class Main:
                 break
 
     @staticmethod
+    def convert_choice_user(choice):
+        try:
+            choice = int(choice)
+        except:
+            if choice == 'N':
+                return choice
+        else:
+            return choice
+
+    @staticmethod
     def choose_food_from_category(connexion, id_user):
         list_categories = {}
         cursor = connexion.cursor()
@@ -114,11 +154,13 @@ class Main:
             list_categories[str(num_category)] = category[1]
             num_category += 1
 
+        list_categories = Main.sort_dict(list_categories, "key")
         for num, name in list_categories.items():
             print(str(num) + " - " + name + "\n")
 
         while True:
             choosen_category = input("Selectionner le numero de la categorie (ou appuyez sur N pour annuler) : ")
+            choosen_category = Main.convert_choice_user(choosen_category)
             if choosen_category in list_categories.keys():
                 category = list_categories[choosen_category]
                 list_products = {}
@@ -133,15 +175,18 @@ class Main:
                     list_products[str(num_category)] = product[0]
                     num_category += 1
 
+                list_products = Main.sort_dict(list_products, 'key')
                 for num, name in list_products.items():
                     print(str(num) + " - " + name)
 
                 while True:
                     choosen_foods = input("\nSelectionner le numero de votre aliment (ou appuyez sur N pour annuler) : ")
+                    choosen_foods = Main.convert_choice_user(choosen_foods)
                     if choosen_foods in list_products.keys():
                         food = list_products[choosen_foods]
                         cursor.execute("SELECT nutri_score FROM Product WHERE name = '"+food+"';")
                         list_good_score = Main.get_better_score(cursor.fetchone()[0])
+
 
                         query_foods = "SELECT Product.name " \
                                       "FROM Category, Product, Product_Category " \
@@ -152,30 +197,36 @@ class Main:
                                       "AND Product.name != '" + food + "';"
 
                         cursor.execute(query_foods)
-                        index_product = 1
-                        dict_products_selected = {}
-                        for product in cursor.fetchall():
-                            dict_products_selected[str(index_product)] = product[0]
-                            index_product+=1
+                        if len(cursor.fetchall()) == 0 :
+                            print('Aucun aliment n\'est plus sain dans cette categorie ..')
+                        else:
+                            cursor.execute(query_foods)
+                            index_product = 1
+                            products_selected = {}
+                            for product in cursor.fetchall():
+                                products_selected[str(index_product)] = product[0]
+                                index_product+=1
 
-                        print("Voici la liste des aliments substituable : ")
-                        for key, value in dict_products_selected.items():
-                            print(str(key) + ' - ' + value + "\n")
+                            print("Voici la liste des aliments substituable : ")
+                            products_selected = Main.sort_dict(products_selected, 'key')
+                            for key, value in products_selected.items():
+                                print(str(key) + ' - ' + value + "\n")
 
-                        while True:
-                            choice = input("Choisissez un numero d'aliment (ou appuyez sur N pour annuler) : ")
-                            if choice in dict_products_selected.keys():
-                                product_select = dict_products_selected[choice]
-                                print('Vous avez choisie : ' + product_select)
-                                cursor.execute("SELECT id FROM Product WHERE name = '"+product_select+"';")
-                                id_product = cursor.fetchone()[0]
-                                query_insert_food_user = "INSERT INTO Product_User (id_user, id_product) " \
-                                                         "VALUES (" +str(id_user)+ ", "+str(id_product)+");"
-                                cursor.execute(query_insert_food_user)
-                                connexion.commit()
-                                break
-                            elif choice == "N":
-                                break
+                            while True:
+                                choice = input("Choisissez un numero d'aliment (ou appuyez sur N pour annuler) : ")
+                                choice = Main.convert_choice_user(choice)
+                                if choice in products_selected.keys():
+                                    product_select = products_selected[choice]
+                                    print('Vous avez choisie : ' + product_select)
+                                    cursor.execute("SELECT id FROM Product WHERE name = '"+product_select+"';")
+                                    id_product = cursor.fetchone()[0]
+                                    query_insert_food_user = "INSERT INTO Product_User (id_user, id_product) " \
+                                                             "VALUES (" +str(id_user)+ ", "+str(id_product)+");"
+                                    cursor.execute(query_insert_food_user)
+                                    connexion.commit()
+                                    break
+                                elif choice == "N":
+                                    break
                     elif choosen_foods == "N":
                         break
             elif choosen_category == "N":
@@ -194,10 +245,15 @@ class Main:
         print("liste des aliments que j'ai substitué :")
         list_user_food = {}
         num_food = 1
+        users_foods = {}
         for row in cursor.fetchall():
-            print("   " + str(num_food) + " - " + row[0])
-            list_user_food[str(num_food)] = row[0]
+            users_foods[str(num_food)] = row[0]
             num_food += 1
+
+        users_foods = Main.sort_dict(users_foods, 'key')
+
+        for num_food, food in users_foods.items():
+            print("   " + str(num_food) + " - " + food)
 
         choosed = False
         while not choosed:

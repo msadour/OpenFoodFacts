@@ -8,15 +8,6 @@ AND Category.name = ""
 AND Product.name IN ('', '');
 
 
-
-SELECT Product.name, Category.name
-FROM Product, Product_Category, Category
-WHERE Product.id = Product_Category.id_product
-AND Category.id = Product_Category.id_category
-AND Category.name = "pizzas tartes salées et quiches"
-
-
-
 Verifier les aliment present dans une categorie par id de categorie
 *****************************************
 SELECT Product.name, Product.nutri_score, Category.name
@@ -32,7 +23,20 @@ SELECT Product.name, Product.nutri_score, Category.name
 FROM Product, Product_Category, Category
 WHERE Product.id = Product_Category.id_product
 AND Category.id = Product_Category.id_category
-AND Category.name = ;
+AND Category.name = '';
+
+
+Voir les aliments avec leurs categorie + nutri_score
+*****************************************
+SELECT Category.name AS 'nom categorie',Product.name, Product.nutri_score
+FROM Product, Product_Category, Category
+WHERE Product.id = Product_Category.id_product
+AND Category.id = Product_Category.id_category
+ORDER BY Category.name;
+
+
+
+
 
 
 
