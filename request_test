@@ -35,9 +35,13 @@ AND Category.id = Product_Category.id_category
 ORDER BY Category.name;
 
 
-
-
-
+Vider la base de donnée
+*****************************************
+DELETE FROM Food_User;
+DELETE FROM Food_Category;
+DELETE FROM User;
+DELETE FROM Category;
+DELETE FROM Food;
 
 
 
