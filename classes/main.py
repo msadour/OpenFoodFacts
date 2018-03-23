@@ -246,53 +246,57 @@ class Main:
                                  "WHERE Food.id = Food_User.id_food " \
                                  "AND Food_User.id_user = " + str(id_user) + ";"
         cursor.execute(query_select_food_user)
-        print("liste des aliments que j'ai substitué :")
-        list_user_foods = {}
-        num_food = 1
-        for food in cursor.fetchall():
-            list_user_foods[str(num_food)] = (food[1], food[2], food[3], food[4])
-            num_food += 1
+        if len(cursor.fetchall()) == 0:
+            print("Vous n'avez substitué aucun aliment..\n")
+        else:
+            cursor.execute(query_select_food_user)
+            print("liste des aliments que j'ai substitué :")
+            list_user_foods = {}
+            num_food = 1
+            for food in cursor.fetchall():
+                list_user_foods[str(num_food)] = (food[1], food[2], food[3], food[4])
+                num_food += 1
 
-        users_foods = Main.sort_dict(list_user_foods, 'key')
+            users_foods = Main.sort_dict(list_user_foods, 'key')
 
-        for num_food, food in users_foods.items():
-            current_food = users_foods[num_food]
-            display_food = "  " + str(num_food) + " - " + current_food[0] + " - " + current_food[1] + \
-                              " - " + current_food[2]
+            for num_food, food in users_foods.items():
+                current_food = users_foods[num_food]
+                display_food = "  " + str(num_food) + " - " + current_food[0] + " - " + current_food[1] + \
+                                  " - " + current_food[2]
 
-            if current_food[3] == '':
-                display_food = '{}{}'.format(display_food, " - (Lieu non precisé)")
-            else:
-                display_food = display_food + " - " + current_food[3]
+                if current_food[3] == '':
+                    display_food = '{}{}'.format(display_food, " - (Lieu non precisé)")
+                else:
+                    display_food = display_food + " - " + current_food[3]
 
-            print(display_food)
+                print(display_food)
 
-        choosed = False
-        while not choosed:
-            do_want_remove = input("\nVoulez vous supprimer un aliment (O/N) ? ")
-            if do_want_remove == "O" or do_want_remove == 'o':
-                food_is_selected = False
-                while not food_is_selected:
-                    food_remove = input("Selectionner le numero de l'aliment à supprimer (ou N pour annuler): ")
-                    if food_remove in list_user_foods.keys():
-                        food_selected_for_remove = list_user_foods[food_remove]
-                        query_select_food = "SELECT id FROM Food WHERE name = '"+food_selected_for_remove[0]+"';"
-                        cursor.execute(query_select_food)
-                        id_food_removed = cursor.fetchone()[0]
-                        query_remove_food = "DELETE FROM Food_User " \
-                                            "WHERE id_food='"+str(id_food_removed)+"' " \
-                                            "AND id_user='"+str(id_user)+"';"
-                        cursor.execute(query_remove_food)
-                        connexion.commit()
-                        food_is_selected = True
-                        choosed = True
-                    elif food_remove == 'N' or food_remove == 'n':
-                        break
-                    else:
-                        print("Saisie incorrecte ! ")
-            elif do_want_remove == 'N' or do_want_remove == 'n':
-                choosed = True
-        print("\n\n")
+            choosed = False
+            while not choosed:
+                do_want_remove = input("\nVoulez vous supprimer un aliment (O/N) ? ")
+                if do_want_remove == "O" or do_want_remove == 'o':
+                    food_is_selected = False
+                    while not food_is_selected:
+                        food_remove = input("Selectionner le numero de l'aliment à supprimer (ou N pour annuler): ")
+                        if food_remove in list_user_foods.keys():
+                            food_selected_for_remove = list_user_foods[food_remove]
+                            query_select_food = "SELECT id FROM Food WHERE name = '"+food_selected_for_remove[0]+"';"
+                            cursor.execute(query_select_food)
+                            id_food_removed = cursor.fetchone()[0]
+                            query_remove_food = "DELETE FROM Food_User " \
+                                                "WHERE id_food='"+str(id_food_removed)+"' " \
+                                                "AND id_user='"+str(id_user)+"';"
+                            cursor.execute(query_remove_food)
+                            connexion.commit()
+                            food_is_selected = True
+                            choosed = True
+                        elif food_remove == 'N' or food_remove == 'n':
+                            break
+                        else:
+                            print("Saisie incorrecte ! ")
+                elif do_want_remove == 'N' or do_want_remove == 'n':
+                    choosed = True
+            print("\n")
 
     @staticmethod
     def put_food_in_db(connexion):
