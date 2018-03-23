@@ -139,7 +139,7 @@ class Main:
         try:
             choice = int(choice)
         except:
-            if choice == 'N':
+            if choice == 'N' or choice == 'n':
                 return choice
         else:
             return choice
@@ -225,11 +225,15 @@ class Main:
                                     cursor.execute(query_insert_food_user)
                                     connexion.commit()
                                     break
-                                elif choice == "N":
+                                elif choice == "N" or choice == "n":
                                     break
-                    elif choosen_foods == "N":
+                                else:
+                                    print("Veuillez choisir le bon numero de l'aliment souhaité .. \n")
+                    elif choosen_foods == "N" or choosen_foods == "n":
                         break
-            elif choosen_category == "N":
+                    else :
+                        print("Veuillez choisir le bon numero de l'aliment souhaité .. \n")
+            elif choosen_category == "N" or choosen_category == "n":
                 break
             else:
                 print("Veuillez choisir le bon numero de la categorie souhaitée .. \n")
@@ -237,34 +241,42 @@ class Main:
     @staticmethod
     def get_user_foods(connexion, id_user):
         cursor = connexion.cursor()
-        query_select_food_user = "SELECT Product.name " \
+        query_select_food_user = "SELECT * " \
                                  "FROM product, Product_User " \
                                  "WHERE product.id = Product_User.id_product " \
                                  "AND Product_User.id_user = " + str(id_user) + ";"
         cursor.execute(query_select_food_user)
         print("liste des aliments que j'ai substitué :")
-        list_user_food = {}
+        list_user_foods = {}
         num_food = 1
-        users_foods = {}
         for row in cursor.fetchall():
-            users_foods[str(num_food)] = row[0]
+            list_user_foods[str(num_food)] = (row[1], row[2], row[3], row[4])
             num_food += 1
 
-        users_foods = Main.sort_dict(users_foods, 'key')
+        users_foods = Main.sort_dict(list_user_foods, 'key')
 
         for num_food, food in users_foods.items():
-            print("   " + str(num_food) + " - " + food)
+            current_food = users_foods[num_food]
+            display_product = "  " + str(num_food) + " - " + current_food[0] + " - " + current_food[1] + \
+                              " - " + current_food[2]
+
+            if current_food[3] == '':
+                display_product = '{}{}'.format(display_product, " - (Lieu non precisé)")
+            else:
+                display_product = display_product + " - " + current_food[3]
+
+            print(display_product)
 
         choosed = False
         while not choosed:
             want_remove = input("\nVoulez vous supprimer un aliment (O/N) ? ")
-            if want_remove == "O":
+            if want_remove == "O" or want_remove == 'o':
                 food_selected = False
                 while not food_selected:
                     food_remove = input("Selectionner le numero de l'aliment à supprimer (ou N pour annuler): ")
-                    if food_remove in list_user_food.keys():
-                        food_selected_for_remove = list_user_food[food_remove]
-                        query_select_food = "SELECT id FROM Product WHERE name = '"+food_selected_for_remove+"';"
+                    if food_remove in list_user_foods.keys():
+                        food_selected_for_remove = list_user_foods[food_remove]
+                        query_select_food = "SELECT id FROM Product WHERE name = '"+food_selected_for_remove[0]+"';"
                         cursor.execute(query_select_food)
                         id_product_removed = cursor.fetchone()[0]
                         query_remove_food = "DELETE FROM Product_User " \
@@ -274,11 +286,11 @@ class Main:
                         connexion.commit()
                         food_selected = True
                         choosed = True
-                    elif food_remove == 'N':
+                    elif food_remove == 'N' or food_remove == 'n':
                         break
                     else:
                         print("Saisie incorrecte ! ")
-            elif want_remove == 'N':
+            elif want_remove == 'N' or want_remove == 'n':
                 choosed = True
         print("\n\n")
 
