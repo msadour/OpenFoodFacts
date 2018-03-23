@@ -1,6 +1,5 @@
 import pymysql
 import requests
-import pprint
 
 
 class Main:
@@ -10,6 +9,10 @@ class Main:
 
     @staticmethod
     def run():
+        """
+        Run application
+        :return:
+        """
         connexion = Main.get_connection_db()
         Main.put_food_in_db(connexion)
         id_user = Main.identification(connexion)
@@ -28,11 +31,19 @@ class Main:
 
     @staticmethod
     def get_connection_db():
+        """
+        Get a connexion of database
+        :return: connexion
+        """
         connexion = pymysql.connect(host='127.0.0.1', user='root', passwd='azerty', db='OpenFoodFacts')
         return connexion
 
     @staticmethod
     def identification(connexion):
+        """
+        Identification of a user
+        :return:
+        """
         while True :
             print('1 - connexion \n2 - Inscription')
             choice = input("")
@@ -45,6 +56,10 @@ class Main:
 
     @staticmethod
     def inscription_user(connexion):
+        """
+        Inscription for use application
+        :return: cursor
+        """
         while True:
             login = input("Saisir votre login : ")
             password = input("Saisir votre mot de passe : ")
@@ -61,6 +76,10 @@ class Main:
 
     @staticmethod
     def connexion_user(connexion):
+        """
+        Connect a user
+        :return: id of user
+        """
         while True:
             login = input("\nSaisir votre login : ")
             password = input("Saisir votre mot de passe : ")
@@ -74,6 +93,10 @@ class Main:
 
     @staticmethod
     def get_food_with_better_score(score):
+        """
+        Return a list (string) with better score than a score of food what we want replace
+        :return:
+        """
         list_better_score = []
         better_score_str = ''
         table_nutri_score = {'a': 5, 'b': 4, 'c': 3, 'd': 2, 'e': 1}
@@ -88,6 +111,10 @@ class Main:
 
     @staticmethod
     def sort_dict(dict_no_sorted, by_what, sens="asc"):
+        """
+        Sort keys of a dict
+        :return:
+        """
         """
         Cette fonction permet de trié le disctionnaire en parametre (dict_no_sorted).
         Elle trie les clés ou les valeur via l'argument "by_what". On peut egalement
@@ -105,6 +132,10 @@ class Main:
 
     @staticmethod
     def get_choice_user():
+        """
+        Ask to user if he want replace a food, show them replaces foods or deconnexion
+        :return:
+        """
         while True:
             print("1 - Remplacer un aliment ? \n2 - Retrouver mes aliments substitués.\n3 - Deconnexion")
             choice_user = input("")
@@ -114,6 +145,10 @@ class Main:
 
     @staticmethod
     def convert_choice_user(message):
+        """
+        Check if choice user is right
+        :return: choice
+        """
         choice = input(message)
         try:
             choice = int(choice)
@@ -125,6 +160,10 @@ class Main:
 
     @staticmethod
     def make_dict_element(cursor, request, index=None, is_row=False, list_index=[]):
+        """
+        Make a dictionnary with sorted keys (number who a user input) and them values
+        :return:
+        """
         cursor.execute(request)
         list_element = {}
         num_element = 1
@@ -140,6 +179,11 @@ class Main:
 
     @staticmethod
     def choose_food_from_category(connexion, id_user):
+        """
+        Display all categories and when a user select a categorie, all food with them categorie is display. When user
+        selected a food, all substitute of them food (with better score) is display and he can replace this food or not
+        :return:
+        """
         cursor = connexion.cursor()
         list_categories = Main.make_dict_element(cursor, "SELECT * FROM Category", 1)
 
@@ -152,10 +196,10 @@ class Main:
             if choosen_category in list_categories.keys():
                 category = list_categories[choosen_category]
                 query_foods_from_category = "SELECT Food.name " \
-                              "FROM Category, Food, Food_Category " \
-                              "WHERE category.id = Food_Category.id_category " \
-                              "AND food.id = Food_Category.id_food " \
-                              "AND Category.name = '" + category + "';"
+                                            "FROM Category, Food, Food_Category " \
+                                            "WHERE category.id = Food_Category.id_category " \
+                                            "AND food.id = Food_Category.id_food " \
+                                            "AND Category.name = '" + category + "';"
                 list_food_category = Main.make_dict_element(cursor, query_foods_from_category, 0)
 
                 for num, name in list_food_category.items():
@@ -215,6 +259,10 @@ class Main:
 
     @staticmethod
     def get_user_foods(connexion, id_user):
+        """
+        Select the food what user selected
+        :return: list of the food what user replaced
+        """
         cursor = connexion.cursor()
         query_select_food_user = "SELECT * " \
                                  "FROM Food, Food_User " \
@@ -267,6 +315,10 @@ class Main:
 
     @staticmethod
     def put_food_in_db(connexion):
+        """
+        Get json files for put data in database.
+        :return:
+        """
         food_category = {}
         cursor = connexion.cursor()
         cursor.execute("SELECT * FROM Food ;")
