@@ -167,11 +167,16 @@ class Main:
         cursor.execute(request)
         list_element = {}
         num_element = 1
+        list_name_element = []
         for element in cursor.fetchall():
             if not is_row:
-                list_element[str(num_element)] = element[index]
+                list_name_element.append(element[index])
             else:
-                list_element[str(num_element)] = tuple((element[i] for i in list_index))
+                tuple_element = tuple((element[i] for i in list_index))
+                list_name_element.append(tuple_element)
+
+        for element in sorted(list_name_element):
+            list_element[str(num_element)] = element
             num_element += 1
 
         list_element = Main.sort_dict(list_element, "key")
