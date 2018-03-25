@@ -4,6 +4,7 @@ Contain the class for run application.
 
 import pymysql
 import requests
+import pdb
 
 
 class Main:
@@ -22,6 +23,8 @@ class Main:
         cursor.execute("SELECT * FROM Food ;")
         if cursor.fetchone() is None:
             # We filled database
+            cursor.execute("ALTER DATABASE openfoodfacts CHARACTER SET utf8 COLLATE utf8_unicode_ci;")
+            connexion.commit()
             Main.put_food_in_db(connexion)
         id_user = Main.identification(connexion)
         deconnection = False
@@ -44,7 +47,7 @@ class Main:
         :return: connexion
         """
         connexion = pymysql.connect(host='127.0.0.1', user='root', passwd='azerty',
-                                    db='OpenFoodFacts')
+                                    db='OpenFoodFacts', charset='utf8')
         return connexion
 
     @staticmethod
@@ -230,7 +233,6 @@ class Main:
                         food = list_food_category[choosen_foods]
                         cursor.execute("SELECT nutri_score FROM Food WHERE name = '"+food+"';")
                         list_betters_score = Main.get_food_with_better_score(cursor.fetchone()[0])
-
                         query_better_food = \
                             "SELECT Food.name " \
                             "FROM Category, Food, Food_Category " \
@@ -239,7 +241,6 @@ class Main:
                             "AND Category.name = '" + category + "' " \
                             "AND nutri_score IN ( " + list_betters_score + ") " \
                             "AND Food.name != '" + food + "';"
-
                         cursor.execute(query_better_food)
                         if cursor.fetchone() is None:
                             print('Aucun aliment n\'est plus sain dans cette categorie ..')
@@ -347,49 +348,74 @@ class Main:
         :return:
         """
         food_category = {}
-        foods = requests.get('https://fr-en.openfoodfacts.org/category/pizzas/1.json').json()
-        cursor = connexion.cursor()
         list_categories_in_db = []
-        for food in foods['products']:
-            # Products wihout nutrition grades not will insert in database.
-            if 'nutrition_grades' in food.keys():
-                if '\'' in food['product_name_fr']:
-                    food['product_name_fr'] = food['product_name_fr'].replace('\'', '')
-                request_insert = "INSERT INTO Food (name, nutri_score, web_link, place) " \
-                                 "VALUES ('" + food['product_name_fr'] + "', '" \
-                                 + food['nutrition_grades'] + "', '"\
-                                 + food['url'] + "', '" + food['purchase_places'] + "');"
-                cursor.execute(request_insert)
-                food_category[food["product_name_fr"]] = []
+        list_food_in_db = []
+        for num_page in range(1, 25):
+            foods = requests.get(
+                'https://fr-en.openfoodfacts.org/category/pizzas/' + str(num_page) + '.json').json()
+            cursor = connexion.cursor()
+            for food in foods['products']:
+                # Products wihout nutrition grades not will insert in database.
+                if 'nutrition_grades' in food.keys():
+                    if 'product_name_fr' not in food.keys():
+                        product_name = food['product_name']
+                    else:
+                        product_name = food['product_name_fr']
+                    if '\'' in product_name:
+                        product_name = product_name.replace('\'', '')
 
-                #for each product, we get all categories which product is associate
-                list_categories = food['categories'].split(',')
-                list_categories = [category.lower() for category in list_categories]
-                for category in list_categories:
-                    if 'en:' in category or 'fr:' in category:
-                        category = category[3:]
-                        if ':' in category:
-                            # In some case, categories have a ':' in the and of them name.
-                            category = category[1:]
-                    if category not in list_categories_in_db:
-                        # We check if category is not exist for insert it
-                        list_categories_in_db.append(category)
-                        cursor.execute("INSERT INTO Category (name) "
-                                       "VALUES ('" + category + "');")
-                    food_category[food["product_name_fr"]].append(category)
+                    if 'purchase_places' in food.keys():
+                        if '\'' in food['purchase_places']:
+                            product_place = food['purchase_places'].replace('\'', '')
+                        else:
+                            product_place = food['purchase_places']
+                    else:
+                        product_place = ''
 
-        connexion.commit()
+                    if product_name.lower() not in list_food_in_db:
+                        list_food_in_db.append(product_name.lower())
+                        if product_name != '':
+                            request_insert = "INSERT INTO Food (name, nutri_score, web_link, place) " \
+                                             "VALUES ('" + product_name + "', '" \
+                                             + food['nutrition_grades'] + "', '"\
+                                             + food['url'] + "', '" + product_place + "');"
+                            cursor.execute(request_insert)
+                            food_category[product_name] = []
+                            # for each product, we get all categories which product is associate
+                            list_categories = food['categories'].split(',')
+                            list_categories = [category.lower() for category in list_categories]
+                            for category in list_categories:
+                                if 'en:' in category or 'fr:' in category or 'de' in category or 'it' in category:
+                                    category = category[3:]
+                                    if ':' in category:
+                                        # In some case, categories have a ':' in the and of them name.
+                                        category = category[1:]
+                                if category not in list_categories_in_db:
+                                    # We check if category is not exist for insert it
+                                    list_categories_in_db.append(category)
+                                    cursor.execute("INSERT INTO Category (name) "
+                                                   "VALUES ('" + category + "');")
+                                food_category[product_name].append(category)
 
-        # We associate each food with them categories
-        for food, list_category in food_category.items():
-            cursor.execute("SELECT id FROM Food WHERE name = '" + food + "';")
-            for id_food in cursor.fetchone():
-                for category in list_category:
-                    cursor.execute("SELECT id FROM Category WHERE name = '" + category + "';")
-                    for id_category in cursor.fetchall():
-                        request_put_food_category = "INSERT INTO Food_Category" \
-                                                    "(id_food, id_category) " \
-                                                "VALUES (" + str(id_food) + ", " \
-                                                + str(id_category[0]) + ");"
-                        cursor.execute(request_put_food_category)
-        connexion.commit()
+                        connexion.commit()
+
+                    # We associate each food with them categories
+                    if product_name != '':
+                        for food, list_category in food_category.items():
+                            cursor.execute("SELECT id FROM Food WHERE name = '" + product_name + "';")
+                            for id_food in cursor.fetchone():
+                                for category in list_category:
+                                    cursor.execute("SELECT id FROM Category WHERE name = '" + category + "';")
+                                    for id_category in cursor.fetchall():
+                                        cursor.execute("SELECT * "
+                                                       "FROM Food_Category "
+                                                       "WHERE id_food = '" + str(id_food) + "'"
+                                                       "AND id_category = '" + str(id_category[0]) + "';")
+                                        # We check if we don't have the same food associate at the same category
+                                        if cursor.fetchone() is None:
+                                            request_put_food_category = "INSERT INTO Food_Category" \
+                                                                        "(id_food, id_category) " \
+                                                                    "VALUES (" + str(id_food) + ", " \
+                                                                    + str(id_category[0]) + ");"
+                                            cursor.execute(request_put_food_category)
+                        connexion.commit()
