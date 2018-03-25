@@ -21,10 +21,11 @@ class Main:
         cursor = connexion.cursor()
         cursor.execute("SELECT * FROM Food ;")
         if cursor.fetchone() is None:
+            # We filled database
             Main.put_food_in_db(connexion)
         id_user = Main.identification(connexion)
-        deconnexion = False
-        while not deconnexion:
+        deconnection = False
+        while not deconnection:
             choice = Main.get_choice_user()
             finish = False
             while not finish:
@@ -33,7 +34,7 @@ class Main:
                 elif choice == "2":
                     Main.get_user_foods(connexion, id_user)
                 elif choice == "3":
-                    deconnexion = True
+                    deconnection = True
                 finish = True
 
     @staticmethod
@@ -73,6 +74,7 @@ class Main:
             password = input("Saisir votre mot de passe : ")
             cursor = connexion.cursor()
             cursor.execute("SELECT * FROM User WHERE login = '" + login + "';")
+            # We check if the user is not already exist.
             if cursor.fetchone() is None:
                 cursor.execute("INSERT INTO User (login, password) "
                                "VALUES ('" + login +"', '" + password + "');")
@@ -117,7 +119,7 @@ class Main:
                 list_better_score.append(letter)
         for letter in list_better_score:
             better_score_str = better_score_str + "'" + letter + "',"
-        # Pour supprimer la derniere virgule :
+        # for delete the last comma :
         better_score_str = better_score_str[:-1]
         return better_score_str
 
@@ -161,6 +163,7 @@ class Main:
         try:
             choice = int(choice)
         except ValueError:
+            # In the case if user choice other things that a number.
             if choice == 'N' or choice == 'n':
                 return choice
         else:
@@ -169,8 +172,9 @@ class Main:
     @staticmethod
     def make_dict_element(cursor, request, index=None, is_row=False, list_index=None):
         """
-        Make a dictionnary with sorted keys (number who a user input) and them values.
-        :return:
+        Make a dictionnary with sorted keys (number who a user input) and them values
+        for display a number with them value like this : 1 - value ..
+        :return: Dictionnary with sorted keys
         """
         cursor.execute(request)
         list_element = {}
@@ -303,6 +307,7 @@ class Main:
                                + current_food[1] + " - " + current_food[2]
 
                 if current_food[3] == '':
+                    # some foods don't contain a place
                     display_food = '{}{}'.format(display_food, " - (Lieu non precisé)")
                 else:
                     display_food = display_food + " - " + current_food[3]
@@ -327,7 +332,6 @@ class Main:
                             cursor.execute(query_remove_food)
                             connexion.commit()
                             food_is_selected = True
-                            break
                         elif food_remove in ['N', 'n']:
                             break
                         else:
@@ -339,7 +343,7 @@ class Main:
     @staticmethod
     def put_food_in_db(connexion):
         """
-        Get json files for put data in database.
+        Get json files for put elements in database.
         :return:
         """
         food_category = {}
@@ -347,7 +351,7 @@ class Main:
         cursor = connexion.cursor()
         list_categories_in_db = []
         for food in foods['products']:
-            #Produit
+            # Products wihout nutrition grades not will insert in database.
             if 'nutrition_grades' in food.keys():
                 if '\'' in food['product_name_fr']:
                     food['product_name_fr'] = food['product_name_fr'].replace('\'', '')
@@ -358,15 +362,17 @@ class Main:
                 cursor.execute(request_insert)
                 food_category[food["product_name_fr"]] = []
 
-                #Categorie
+                #for each product, we get all categories which product is associate
                 list_categories = food['categories'].split(',')
                 list_categories = [category.lower() for category in list_categories]
                 for category in list_categories:
                     if 'en:' in category or 'fr:' in category:
                         category = category[3:]
                         if ':' in category:
+                            # In some case, categories have a ':' in the and of them name.
                             category = category[1:]
                     if category not in list_categories_in_db:
+                        # We check if category is not exist for insert it
                         list_categories_in_db.append(category)
                         cursor.execute("INSERT INTO Category (name) "
                                        "VALUES ('" + category + "');")
@@ -374,7 +380,7 @@ class Main:
 
         connexion.commit()
 
-        #Food Category
+        # We associate each food with them categories
         for food, list_category in food_category.items():
             cursor.execute("SELECT id FROM Food WHERE name = '" + food + "';")
             for id_food in cursor.fetchone():
