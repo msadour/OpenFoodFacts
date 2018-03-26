@@ -1,10 +1,19 @@
 Fonctionnalité du programme :
 
-* Selection entre 2 choix :
-    * Choisir un aliment à remplacer
-        * Selectionner une categorie
-        * Rechercher un aliment
-        * Retourner un jeu de resultat
-    * Retrouver des aliments substitué
+    * Remplissage de la base de donnée
 
-* Controler la bonne saisie de l'utilisateur
+    * Authentification
+        * Se connecter
+        * S'inscrire
+
+    * Menu de selection entre 3 choix :
+        * Choisir un aliment à remplacer
+            * Selectionner une categorie
+            * Rechercher un aliment
+            * Retourner un jeu de resultat
+        * Retrouver des aliments substitués
+            * Visualisation des aliments substitués
+            * Possibilité de suppression des aliments substitués
+        * Se deconnecter
+
+    * Controler la bonne saisie de l'utilisateur (soit un numero qui est affiché, soit 'o'/'O', ou 'n'/'N')
