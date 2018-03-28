@@ -5,6 +5,7 @@ Contain the class for run application.
 import pymysql
 import requests
 import pdb
+from decimal import Decimal
 
 
 class Main:
@@ -19,13 +20,6 @@ class Main:
         :return:
         """
         connexion = Main.get_connection_db()
-        cursor = connexion.cursor()
-        cursor.execute("SELECT * FROM Food ;")
-        if cursor.fetchone() is None:
-            # We filled database
-            cursor.execute("ALTER DATABASE openfoodfacts CHARACTER SET utf8 COLLATE utf8_unicode_ci;")
-            connexion.commit()
-            Main.put_food_in_db(connexion)
         id_user = Main.identification(connexion)
         deconnection = False
         while not deconnection:
@@ -205,81 +199,125 @@ class Main:
         food (with better score) is display and he can replace this food or not.
         :return:
         """
+        list_type_category = {
+            1: 'Aliments à base de fruits et de légumes',
+            2: 'Cookies',
+            3: 'Desserts glacés',
+            4: 'Fruits',
+            5: 'Gâteaux',
+            6: 'Glaces et sorbets',
+            7: 'Œufs',
+            8: 'Pâtes à tartiner',
+            9: 'Pizzas',
+            10: 'Petit-déjeuners',
+            11: 'Produits de la mer',
+            12: 'Sandwichs',
+            13: 'Saumons',
+            14: 'Viandes',
+            15: 'Viennoiseries'
+        }
         cursor = connexion.cursor()
-        list_categories = Main.make_dict_element(cursor, "SELECT * FROM Category", 1)
-
-        for num, name in list_categories.items():
+        for num, name in list_type_category.items():
             print(str(num) + " - " + name)
 
         while True:
-            choosen_category = Main.convert_choice_user("Selectionner le numero de la categorie "
-                                                        "(ou appuyez sur N pour annuler) : ")
-            if choosen_category in list_categories.keys():
-                category = list_categories[choosen_category]
-                query_foods_from_category = "SELECT Food.name " \
-                                            "FROM Category, Food, Food_Category " \
-                                            "WHERE category.id = Food_Category.id_category " \
-                                            "AND food.id = Food_Category.id_food " \
-                                            "AND Category.name = '" + category + "';"
-                list_food_category = Main.make_dict_element(cursor, query_foods_from_category, 0)
+            type_category_selected = Main.convert_choice_user("Selectionner un type de categorie : ")
 
-                for num, name in list_food_category.items():
+            if type_category_selected in list_type_category.keys():
+                name_type_category = list_type_category[type_category_selected]
+
+                query_category_by_type = "SELECT * " \
+                                         "FROM Category " \
+                                         "WHERE type='" + name_type_category + "';"
+
+                cursor.execute(query_category_by_type)
+                # pdb.set_trace()
+                if cursor.fetchone() is None:
+                    Main.put_food_in_db(connexion, name_type_category)
+
+                list_categories = Main.make_dict_element(cursor, query_category_by_type, 1)
+                for num, name in list_categories.items():
                     print(str(num) + " - " + name)
 
                 while True:
-                    choosen_foods = Main.convert_choice_user(
-                        "\nSelectionnez le numero d'un aliment (ou N pour annuler) : ")
-                    if choosen_foods in list_food_category.keys():
-                        food = list_food_category[choosen_foods]
-                        cursor.execute("SELECT nutri_score FROM Food WHERE name = '"+food+"';")
-                        list_betters_score = Main.get_food_with_better_score(cursor.fetchone()[0])
-                        query_better_food = \
-                            "SELECT Food.name " \
-                            "FROM Category, Food, Food_Category " \
-                            "WHERE category.id = Food_Category.id_category " \
-                            "AND food.id = Food_Category.id_food " \
-                            "AND Category.name = '" + category + "' " \
-                            "AND nutri_score IN ( " + list_betters_score + ") " \
-                            "AND Food.name != '" + food + "';"
-                        cursor.execute(query_better_food)
-                        if cursor.fetchone() is None:
-                            print('Aucun aliment n\'est plus sain dans cette categorie ..')
-                        else:
-                            foods_substitute = Main.make_dict_element(cursor, query_better_food, 0)
+                    choosen_category = Main.convert_choice_user("Selectionner le numero de la categorie "
+                                                                "(ou appuyez sur N pour annuler) : ")
+                    if choosen_category in list_categories.keys():
+                        category = list_categories[choosen_category]
+                        query_foods_from_category = "SELECT Food.name " \
+                                                    "FROM Category, Food, Food_Category " \
+                                                    "WHERE category.id = Food_Category.id_category " \
+                                                    "AND food.id = Food_Category.id_food " \
+                                                    "AND Category.name = '" + category + "';"
+                        list_food_category = Main.make_dict_element(cursor, query_foods_from_category, 0)
 
-                            print("Voici la liste des aliments substituable : ")
-                            for num, food in foods_substitute.items():
-                                print(str(num) + ' - ' + food)
+                        for num, name in list_food_category.items():
+                            print(str(num) + " - " + name)
 
-                            while True:
-                                choosen_foods_substitute = Main.convert_choice_user(
-                                    "Choisissez un numero d'aliment (ou N pour annuler) : ")
-                                if choosen_foods_substitute in foods_substitute.keys():
-                                    food_select = foods_substitute[choosen_foods_substitute]
-                                    print('Vous avez choisie : ' + food_select)
-                                    cursor.execute("SELECT id "
-                                                   "FROM Food "
-                                                   "WHERE name = '"+food_select+"';")
-                                    id_food = cursor.fetchone()[0]
-                                    query_insert_food_user = "INSERT INTO Food_User " \
-                                                             "(id_user, id_food) " \
-                                                             "VALUES (" + str(id_user) + ", "\
-                                                             + str(id_food)+");"
-                                    cursor.execute(query_insert_food_user)
-                                    connexion.commit()
-                                    break
-                                elif choosen_foods_substitute in ['N', 'n']:
-                                    break
+                        while True:
+                            choosen_foods = Main.convert_choice_user(
+                                "\nSelectionnez le numero d'un aliment (ou N pour annuler) : ")
+                            if choosen_foods in list_food_category.keys():
+                                food = list_food_category[choosen_foods]
+                                if '\'' in food:
+                                    food = food.replace('\'', '')
+                                cursor.execute("SELECT nutri_score FROM Food WHERE name = '"+food+"';")
+                                list_betters_score = Main.get_food_with_better_score(cursor.fetchone()[0])
+                                if len(list_betters_score) == 0:
+                                    print('Cet aliment présente le meilleurs score ..')
                                 else:
-                                    print("Saisie incorrecte ! \n")
-                    elif choosen_foods == "N" or choosen_foods == "n":
+                                    query_better_food = \
+                                        "SELECT Food.name " \
+                                        "FROM Category, Food, Food_Category " \
+                                        "WHERE category.id = Food_Category.id_category " \
+                                        "AND food.id = Food_Category.id_food " \
+                                        "AND Category.name = '" + category + "' " \
+                                        "AND nutri_score IN ( " + list_betters_score + ") " \
+                                        "AND Food.name != '" + food + "';"
+                                    cursor.execute(query_better_food)
+
+                                    if cursor.fetchone() is None:
+                                        print('Aucun aliment n\'est plus sain dans cette categorie ..')
+                                    else:
+                                        foods_substitute = Main.make_dict_element(cursor, query_better_food, 0)
+
+                                        print("Voici la liste des aliments substituable : ")
+                                        for num, food in foods_substitute.items():
+                                            print(str(num) + ' - ' + food)
+
+                                        while True:
+                                            choosen_foods_substitute = Main.convert_choice_user(
+                                                "Choisissez un numero d'aliment (ou N pour annuler) : ")
+                                            if choosen_foods_substitute in foods_substitute.keys():
+                                                food_select = foods_substitute[choosen_foods_substitute]
+                                                print('Vous avez choisie : ' + food_select)
+                                                cursor.execute("SELECT id "
+                                                               "FROM Food "
+                                                               "WHERE name = '"+food_select+"';")
+                                                id_food = cursor.fetchone()[0]
+                                                query_insert_food_user = "INSERT INTO Food_User " \
+                                                                         "(id_user, id_food) " \
+                                                                         "VALUES (" + str(id_user) + ", "\
+                                                                         + str(id_food)+");"
+                                                cursor.execute(query_insert_food_user)
+                                                connexion.commit()
+                                                break
+                                            elif choosen_foods_substitute in ['N', 'n']:
+                                                break
+                                            else:
+                                                print("Saisie incorrecte ! \n")
+                            elif choosen_foods == "N" or choosen_foods == "n":
+                                break
+                            else:
+                                print("Veuillez choisir le bon numero de l'aliment souhaité .. \n")
+                    elif choosen_category == "N" or choosen_category == "n":
                         break
                     else:
-                        print("Veuillez choisir le bon numero de l'aliment souhaité .. \n")
-            elif choosen_category == "N" or choosen_category == "n":
+                        print("Veuillez choisir le bon numero de la categorie souhaitée .. \n")
+            elif type_category_selected in ['n', 'N']:
                 break
             else:
-                print("Veuillez choisir le bon numero de la categorie souhaitée .. \n")
+                print("Saisie incorrecte ! \n")
 
     @staticmethod
     def get_user_foods(connexion, id_user):
@@ -342,18 +380,26 @@ class Main:
             print("\n")
 
     @staticmethod
-    def put_food_in_db(connexion):
+    def put_food_in_db(connexion, type_category):
         """
         Get json files for put elements in database.
         :return:
         """
+        cursor = connexion.cursor()
+
+        type_category = type_category.lower()
+        # pdb.set_trace()
+        first_page = requests.get(
+            'https://fr-en.openfoodfacts.org/category/'+type_category+'/1.json').json()
+        page_size = first_page['page_size']
+        count_element = first_page['count']
+        total_page = Decimal(round(count_element / page_size, 0)) + 2
         food_category = {}
         list_categories_in_db = []
         list_food_in_db = []
-        for num_page in range(1, 25):
+        for num_page in range(1, int(total_page)):
             foods = requests.get(
-                'https://fr-en.openfoodfacts.org/category/pizzas/' + str(num_page) + '.json').json()
-            cursor = connexion.cursor()
+                'https://fr-en.openfoodfacts.org/category/'+type_category+'/' + str(num_page)+'.json').json()
             for food in foods['products']:
                 # Products wihout nutrition grades not will insert in database.
                 if 'nutrition_grades' in food.keys():
@@ -385,16 +431,19 @@ class Main:
                             list_categories = food['categories'].split(',')
                             list_categories = [category.lower() for category in list_categories]
                             for category in list_categories:
-                                if 'en:' in category or 'fr:' in category or 'de' in category or 'it' in category:
+                                if '\'' in category:
+                                    category = category.replace('\'', '')
+                                if category[:3] in ['it:', 'fr:', 'en:', 'es:', 'de:']:
                                     category = category[3:]
-                                    if ':' in category:
-                                        # In some case, categories have a ':' in the and of them name.
-                                        category = category[1:]
+                                if category[:4] in [' it:', ' fr:', ' en:', ' es:', ' de:']:
+                                    category = category[4:]
                                 if category not in list_categories_in_db:
                                     # We check if category is not exist for insert it
+                                    print(category)
                                     list_categories_in_db.append(category)
-                                    cursor.execute("INSERT INTO Category (name) "
-                                                   "VALUES ('" + category + "');")
+                                    query_insert_category = "INSERT INTO Category (name, type) " \
+                                                            "VALUES ('" + category + "', '"+type_category+"');"
+                                    cursor.execute(query_insert_category)
                                 food_category[product_name].append(category)
 
                         connexion.commit()
