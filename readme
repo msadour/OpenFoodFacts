@@ -8,6 +8,7 @@ Fonctionnalité du programme :
 
     * Menu de selection entre 3 choix :
         * Choisir un aliment à remplacer
+            * Choisir un type de categorie
             * Selectionner une categorie
             * Rechercher un aliment
             * Retourner un jeu de resultat

@@ -4,7 +4,6 @@ Contain the class for run application.
 
 import pymysql
 import requests
-import pdb
 from decimal import Decimal
 
 
@@ -123,7 +122,7 @@ class Main:
     @staticmethod
     def sort_dict(dict_no_sorted, sens="asc"):
         """
-        This function sort keys of a dict.
+        This function sort a dict by theses keys.
         :return:
         """
 
@@ -153,14 +152,14 @@ class Main:
     @staticmethod
     def convert_choice_user(message):
         """
-        Check if choice user is right.
+        Check if the choice of user is right.
         :return: choice
         """
         choice = input(message)
         try:
             choice = int(choice)
         except ValueError:
-            # In the case if user choice other things that a number.
+            # In the case if user choice other things that a number ('n' or 'N' for cancel).
             if choice == 'N' or choice == 'n':
                 return choice
         else:
@@ -249,7 +248,6 @@ class Main:
                                          "WHERE type='" + name_type_category + "';"
 
                 cursor.execute(query_category_by_type)
-                # pdb.set_trace()
                 if cursor.fetchone() is None:
                     Main.put_food_in_db(connexion, name_type_category)
 
@@ -405,7 +403,6 @@ class Main:
         cursor = connexion.cursor()
 
         type_category = type_category.lower()
-        # pdb.set_trace()
         first_page = requests.get(
             'https://fr-en.openfoodfacts.org/category/'+type_category+'/1.json').json()
         page_size = first_page['page_size']
