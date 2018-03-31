@@ -192,6 +192,24 @@ class Main:
         return list_element
 
     @staticmethod
+    def clean_data(data):
+        """
+        In some case, some data content character which can not display on the application. This method
+        remove bad character in a data name.
+        :return: cleaned_data
+        """
+        if data[:3] in ['it:', 'fr:', 'en:', 'es:', 'de:']:
+            data = data[3:]
+        if data[:4] in [' it:', ' fr:', ' en:', ' es:', ' de:']:
+            data = data[4:]
+        if '\'' in data:
+            data = data.replace('\'', '')
+        if data[:1] == ' ':
+            data = data[1:]
+
+        return data
+
+    @staticmethod
     def choose_food_from_category(connexion, id_user):
         """
         Display all categories and when a user select a categorie, all food with
@@ -208,8 +226,8 @@ class Main:
             6: 'Glaces et sorbets',
             7: 'Œufs',
             8: 'Pâtes à tartiner',
-            9: 'Pizzas',
-            10: 'Petit-déjeuners',
+            9: 'Petit-déjeuners',
+            10: 'Pizzas',
             11: 'Produits de la mer',
             12: 'Sandwichs',
             13: 'Saumons',
@@ -259,8 +277,7 @@ class Main:
                                 "\nSelectionnez le numero d'un aliment (ou N pour annuler) : ")
                             if choosen_foods in list_food_category.keys():
                                 food = list_food_category[choosen_foods]
-                                if '\'' in food:
-                                    food = food.replace('\'', '')
+                                food = Main.clean_data(food)
                                 cursor.execute("SELECT nutri_score FROM Food WHERE name = '"+food+"';")
                                 list_betters_score = Main.get_food_with_better_score(cursor.fetchone()[0])
                                 if len(list_betters_score) == 0:
@@ -404,19 +421,13 @@ class Main:
                 # Products wihout nutrition grades not will insert in database.
                 if 'nutrition_grades' in food.keys():
                     if 'product_name_fr' not in food.keys():
-                        product_name = food['product_name']
+                        product_name = Main.clean_data(food['product_name'])
                     else:
-                        product_name = food['product_name_fr']
-                    if '\'' in product_name:
-                        product_name = product_name.replace('\'', '')
+                        product_name = Main.clean_data(food['product_name_fr'])
 
+                    product_place = ''
                     if 'purchase_places' in food.keys():
-                        if '\'' in food['purchase_places']:
-                            product_place = food['purchase_places'].replace('\'', '')
-                        else:
-                            product_place = food['purchase_places']
-                    else:
-                        product_place = ''
+                        product_place = Main.clean_data(product_place)
 
                     if product_name.lower() not in list_food_in_db:
                         list_food_in_db.append(product_name.lower())
@@ -431,12 +442,7 @@ class Main:
                             list_categories = food['categories'].split(',')
                             list_categories = [category.lower() for category in list_categories]
                             for category in list_categories:
-                                if '\'' in category:
-                                    category = category.replace('\'', '')
-                                if category[:3] in ['it:', 'fr:', 'en:', 'es:', 'de:']:
-                                    category = category[3:]
-                                if category[:4] in [' it:', ' fr:', ' en:', ' es:', ' de:']:
-                                    category = category[4:]
+                                category = Main.clean_data(category)
                                 if category not in list_categories_in_db:
                                     # We check if category is not exist for insert it
                                     print(category)

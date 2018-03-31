@@ -26,6 +26,17 @@ AND Category.id = food_Category.id_category
 AND Category.name = '';
 
 
+
+SELECT count(*)
+FROM food, food_Category, Category
+WHERE food.id = food_Category.id_food
+AND Category.id = food_Category.id_category
+AND Category.type = 'Sodas';
+
+
+
+
+
 Voir les aliments avec leurs categorie + nutri_score
 *****************************************
 SELECT Category.name AS 'nom categorie',food.name, food.nutri_score
