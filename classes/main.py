@@ -111,7 +111,7 @@ class Main:
         table_nutri_score = {'a': 5, 'b': 4, 'c': 3, 'd': 2, 'e': 1}
         score_my_food = table_nutri_score[current_score]
         for letter, score in table_nutri_score.items():
-            if score > score_my_food:
+            if score >= score_my_food and score not in [2, 1]:
                 list_better_score.append(letter)
         for letter in list_better_score:
             better_score_str = better_score_str + "'" + letter + "',"
@@ -220,18 +220,18 @@ class Main:
             1: 'Aliments à base de fruits et de légumes',
             2: 'Cookies',
             3: 'Desserts glacés',
-            4: 'Fruits',
-            5: 'Gâteaux',
-            6: 'Glaces et sorbets',
-            7: 'Œufs',
-            8: 'Pâtes à tartiner',
-            9: 'Petit-déjeuners',
-            10: 'Pizzas',
+            4: 'Flocons',
+            5: 'Fruits',
+            6: 'Gâteaux',
+            7: 'Glaces et sorbets',
+            8: 'Hamburgers',
+            9: 'Œufs',
+            10: 'Pâtes à tartiner',
             11: 'Produits de la mer',
             12: 'Sandwichs',
             13: 'Saumons',
             14: 'Viandes',
-            15: 'Viennoiseries'
+            15: 'Tofu'
         }
         cursor = connexion.cursor()
         for num, name in list_type_category.items():
@@ -260,29 +260,32 @@ class Main:
                                                                 "(ou appuyez sur N pour annuler) : ")
                     if choosen_category in list_categories.keys():
                         category = list_categories[choosen_category]
-                        query_foods_from_category = "SELECT Food.name " \
+                        query_foods_from_category = "SELECT Food.name, Food.nutri_score " \
                                                     "FROM Category, Food, Food_Category " \
                                                     "WHERE category.id = Food_Category.id_category " \
                                                     "AND food.id = Food_Category.id_food " \
                                                     "AND Category.name = '" + category + "';"
-                        list_food_category = Main.make_dict_element(cursor, query_foods_from_category, 0)
-
-                        for num, name in list_food_category.items():
-                            print(str(num) + " - " + name)
+                        list_food_category = Main.make_dict_element(cursor, query_foods_from_category, 0,
+                                                                    is_row=True, list_index=[0,1])
+                        for num, food in list_food_category.items():
+                            if type(food) is tuple:
+                                print(str(num) + " - " + food[0] + " ("+food[1]+")")
+                            else:
+                                print(str(num) + " - " + food)
 
                         while True:
                             choosen_foods = Main.convert_choice_user(
                                 "\nSelectionnez le numero d'un aliment (ou N pour annuler) : ")
                             if choosen_foods in list_food_category.keys():
                                 food = list_food_category[choosen_foods]
-                                food = Main.clean_data(food)
+                                food = Main.clean_data(food)[0]
                                 cursor.execute("SELECT nutri_score FROM Food WHERE name = '"+food+"';")
                                 list_betters_score = Main.get_food_with_better_score(cursor.fetchone()[0])
                                 if len(list_betters_score) == 0:
                                     print('Cet aliment présente le meilleurs score ..')
                                 else:
                                     query_better_food = \
-                                        "SELECT Food.name " \
+                                        "SELECT Food.name, Food.nutri_score " \
                                         "FROM Category, Food, Food_Category " \
                                         "WHERE category.id = Food_Category.id_category " \
                                         "AND food.id = Food_Category.id_food " \
@@ -294,17 +297,21 @@ class Main:
                                     if cursor.fetchone() is None:
                                         print('Aucun aliment n\'est plus sain dans cette categorie ..')
                                     else:
-                                        foods_substitute = Main.make_dict_element(cursor, query_better_food, 0)
+                                        foods_substitute = Main.make_dict_element(cursor, query_better_food, 0,
+                                                                    is_row=True, list_index=[0,1])
 
                                         print("Voici la liste des aliments substituable : ")
                                         for num, food in foods_substitute.items():
-                                            print(str(num) + ' - ' + food)
+                                            if type(food) is tuple:
+                                                print(str(num) + " - " + food[0] + " (" + food[1] + ")")
+                                            else:
+                                                print(str(num) + " - " + food)
 
                                         while True:
                                             choosen_foods_substitute = Main.convert_choice_user(
                                                 "Choisissez un numero d'aliment (ou N pour annuler) : ")
                                             if choosen_foods_substitute in foods_substitute.keys():
-                                                food_select = foods_substitute[choosen_foods_substitute]
+                                                food_select = foods_substitute[choosen_foods_substitute][0]
                                                 print('Vous avez choisie : ' + food_select)
                                                 cursor.execute("SELECT id "
                                                                "FROM Food "
@@ -442,7 +449,6 @@ class Main:
                                 category = Main.clean_data(category)
                                 if category not in list_categories_in_db:
                                     # We check if category is not exist for insert it
-                                    print(category)
                                     list_categories_in_db.append(category)
                                     query_insert_category = "INSERT INTO Category (name, type) " \
                                                             "VALUES ('" + category + "', '"+type_category+"');"

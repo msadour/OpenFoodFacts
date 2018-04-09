@@ -23,23 +23,20 @@ SELECT food.name, food.nutri_score, Category.name
 FROM food, food_Category, Category
 WHERE food.id = food_Category.id_food
 AND Category.id = food_Category.id_category
-AND Category.name = '';
-
+AND Category.name = ' airelles' 
+ORDER BY food.name;
 
 
 SELECT count(*)
 FROM food, food_Category, Category
 WHERE food.id = food_Category.id_food
 AND Category.id = food_Category.id_category
-AND Category.type = 'Sodas';
-
-
-
+AND Category.type = 'Viennoiseries';
 
 
 Voir les aliments avec leurs categorie + nutri_score
 *****************************************
-SELECT Category.name AS 'nom categorie',food.name, food.nutri_score
+SELECT Category.type AS 'type', Category.name AS 'nom categorie',food.name, food.nutri_score
 FROM food, food_Category, Category
 WHERE food.id = food_Category.id_food
 AND Category.id = food_Category.id_category
