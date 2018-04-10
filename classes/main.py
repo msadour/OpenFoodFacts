@@ -5,7 +5,9 @@ Contain the class for run application.
 import pymysql
 import requests
 from decimal import Decimal
-
+import sys
+sys.path.append("..")
+import config
 
 class Main:
     """
@@ -30,6 +32,7 @@ class Main:
                 elif choice == "2":
                     Main.get_user_foods(connexion, id_user)
                 elif choice == "3":
+                    print("\nA bientôt !")
                     deconnection = True
                 finish = True
 
@@ -39,8 +42,8 @@ class Main:
         Get a connexion of database
         :return: connexion
         """
-        connexion = pymysql.connect(host='127.0.0.1', user='root', passwd='azerty',
-                                    db='OpenFoodFacts', charset='utf8')
+        connexion = pymysql.connect(host=config.HOST, user=config.USER, passwd=config.PASSWD,
+                                    db=config.DB, charset=config.ENCODAGE)
         return connexion
 
     @staticmethod
@@ -407,6 +410,9 @@ class Main:
         Get json files for put elements in database.
         :return:
         """
+
+        print("Remplissage de la base de données du type de categorie "
+              "'" + type_category + "', veuillez patienter s\'il vous plait ...")
         cursor = connexion.cursor()
 
         type_category = type_category.lower()
